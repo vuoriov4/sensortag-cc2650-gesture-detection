@@ -504,7 +504,11 @@ void mpu9250_get_data(I2C_Handle *i2c, float *ax, float *ay, float *az, float *g
 	// PURPOSEDLY MISSING STUFF HERE:
 	// 1. TURN THE BYTES INTO A SIGNED 16-BIT VALUE ACCORDING TO LECTURE MATERIAL
 	// 2. STORE THE VALUES INTO THE ARRAY data[7]
-
+	int i;
+	for (i = 0; i < 7; i++) {
+	    data[i] = (rawData[i*2] << 8) + rawData[i*2 + 1];
+	}
+	
 	// 3. CALCULATE THE ACCELEROMETER VALUES FROM ARRAY data INTO ACTUAL G'S
 	*ax = (float)data[0]*aRes - accelBias[0];
 	*ay = (float)data[1]*aRes - accelBias[1];
