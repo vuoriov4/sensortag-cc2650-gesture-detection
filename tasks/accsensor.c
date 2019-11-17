@@ -13,13 +13,14 @@
 #include "sensors/mpu9250.h"
 
 Char accelerationSensorTaskStack[STACKSIZE];
-int reading = 1;
+
 static PIN_Handle hMpuPin;
 static PIN_State MpuPinState;
 static PIN_Config MpuPinConfig[] = { Board_MPU_POWER  | PIN_GPIO_OUTPUT_EN | PIN_GPIO_HIGH | PIN_PUSHPULL | PIN_DRVSTR_MAX, PIN_TERMINATE };
 static const I2CCC26XX_I2CPinCfg i2cMPUCfg = { .pinSDA = Board_I2C0_SDA1, .pinSCL = Board_I2C0_SCL1 };
 
 Void accelerationSensorTaskFxn(UArg arg0, UArg arg1) {
+    // initialize sensor
     hMpuPin = PIN_open(&MpuPinState, MpuPinConfig);
     if (hMpuPin == NULL) System_abort("Pin open failed!");
 	I2C_Handle i2cMPU; 
@@ -40,25 +41,37 @@ Void accelerationSensorTaskFxn(UArg arg0, UArg arg1) {
 	System_printf("MPU9250: Setup and calibration OK\n");
 	System_flush();
     I2C_close(i2cMPU);
+    // read
 	while (1) {
-        if (getState() != READING) {
-            Task_sleep(100000 / Clock_tickPeriod); // 0.1s
+	    int s = getState();
+        if (!(s == STATE_READING || s == STATE_RECORDING || s == STATE_GESTURE_DETECTED)) {
+            Task_sleep(10000 / Clock_tickPeriod); // 0.1s
             continue;
         }
 	    i2cMPU = I2C_open(Board_I2C, &i2cMPUParams);
 	    if (i2cMPU == NULL) System_abort("Error Initializing I2CMPU\n");
 		mpu9250_get_data(&i2cMPU, &ax, &ay, &az, &gx, &gy, &gz);
-        //printf("Do something with mpu9250 data...\n");
+		if (false) {
+		    char sax[16]; char say[16]; char saz[16];
+            snprintf (sax, sizeof(sax), "%f", ax);
+            snprintf (say, sizeof(say), "%f", ay);
+            snprintf (saz, sizeof(saz), "%f", az);
+            printf("%s,%s,%s\n", sax, say, saz);
+		}
+		uint32_t timestamp = Clock_tickPeriod * Clock_getTicks(); 
+		if (s == STATE_READING || s == STATE_GESTURE_DETECTED) recordData(ax, ay, az, gx, gy, gz, timestamp / 1000000.0f); // timestamp seconds
+        else if (s == STATE_RECORDING) recordTrainingData(ax, ay, az, gx, gy, gz, timestamp / 1000000.0f); // timestamp seconds
         setLcdAccelerationText(ax, ay, az);
         setLcdGyroText(gx, gy, gz);
 	    I2C_close(i2cMPU);
-    	Task_sleep(10000 / Clock_tickPeriod); // 0.01s
+    	Task_sleep(ACC_SENSOR_SAMPLING_DELAY / Clock_tickPeriod); 
 	}
 	// power off
     // PIN_setOutputValue(hMpuPin,Board_MPU_POWER, Board_MPU_POWER_OFF); 
 }
 
 Void startAccelerationSensorTask() {
+   initializeData();
    Task_Params params;
    Task_Handle handle;
    Task_Params_init(&params);

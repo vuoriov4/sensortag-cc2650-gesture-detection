@@ -8,11 +8,14 @@
 #include <ti/drivers/Power.h>
 #include <ti/drivers/power/PowerCC26XX.h>
 #include "Board.h"
+#include "Prototypes.h"
 #include "wireless/comm_lib.h"
 
 Void startTasks() {
     startLcdTask();
     startAccelerationSensorTask();
+    startBuzzerTask();
+    startMessageTask();
     startMainTask();
 }
 

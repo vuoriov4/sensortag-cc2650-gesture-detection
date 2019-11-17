@@ -48,6 +48,7 @@ extern "C" {
 #define     Board_LED1              Board_STK_LED1
 #define     Board_LED2              Board_STK_LED2
 #define     Board_LED0              Board_LED2
+#define     Board_BUZZ              Board_BUZZER
 
 #define     Board_BUTTON0           Board_KEY_LEFT
 #define     Board_BUTTON1           Board_KEY_RIGHT
@@ -66,7 +67,7 @@ extern "C" {
 }
 
 #define     Board_initGPIO()
-#define     Board_initPWM()        PWM_init()
+#define     Board_initPWM()         PWM_init()
 #define     Board_initI2C()         I2C_init()
 #define     Board_initSPI()         SPI_init()
 #define     Board_initUART()        UART_init()
